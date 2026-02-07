@@ -384,6 +384,18 @@
             password: '9122'
         };
 
+        // --- UTF-8 <-> base64 helpers (GitHub API content) ---
+        function b64ToUtf8(b64) {
+            const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+            return new TextDecoder('utf-8').decode(bytes);
+        }
+        function utf8ToB64(str) {
+            const bytes = new TextEncoder().encode(str);
+            let bin = '';
+            bytes.forEach(b => bin += String.fromCharCode(b));
+            return btoa(bin);
+        }
+
         let quill;
         let currentDeleteIndex = null;
 
@@ -577,7 +589,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     sha = data.sha;
-                    const content = atob(data.content);
+                    const content = b64ToUtf8(data.content);
                     posts = JSON.parse(content);
                 }
 
@@ -595,7 +607,7 @@
                         },
                         body: JSON.stringify({
                             message: 'Update posts.json',
-                            content: btoa(unescape(encodeURIComponent(JSON.stringify(posts, null, 2)))),
+                            content: utf8ToB64(JSON.stringify(posts, null, 2)),
                             sha: sha,
                             branch: 'main'
                         })
@@ -757,7 +769,7 @@
                 }
 
                 const data = await response.json();
-                const posts = JSON.parse(atob(data.content));
+                const posts = JSON.parse(b64ToUtf8(data.content));
                 const deletedPost = posts[currentDeleteIndex];
 
                 // 포스트 폴더 삭제
@@ -777,7 +789,7 @@
                         },
                         body: JSON.stringify({
                             message: 'Delete post from posts.json',
-                            content: btoa(unescape(encodeURIComponent(JSON.stringify(posts, null, 2)))),
+                            content: utf8ToB64(JSON.stringify(posts, null, 2)),
                             sha: data.sha,
                             branch: 'main'
                         })
