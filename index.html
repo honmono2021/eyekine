@@ -647,6 +647,20 @@
             token: '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'
         };
 
+        // HTML 엔티티 디코딩 함수
+        function decodeHtmlEntities(text) {
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = text;
+            return textarea.value;
+        }
+
+        // HTML 태그 완전 제거 함수
+        function stripHtml(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
         // 기본 포스트 (백업용 - GitHub에서 로딩 실패시)
         const DEFAULT_POSTS = [
             {
@@ -724,8 +738,9 @@
                             // HTML에서 제목 추출
                             const titleMatch = htmlContent.match(/<h1[^>]*>(.*?)<\/h1>/);
                             let title = titleMatch ? titleMatch[1] : folder.name;
-                            // HTML 태그 및 엔티티 제거
-                            title = title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+                            // HTML 태그 및 엔티티 완전 제거
+                            title = stripHtml(decodeHtmlEntities(title)).trim();
+                            if (!title) title = folder.name;
 
                             // 날짜 추출 (타임스탬프에서)
                             const timestamp = folder.name.split('-').pop();
@@ -740,10 +755,8 @@
                             const articleMatch = htmlContent.match(/<article[^>]*class="content"[^>]*>(.*?)<\/article>/s);
                             let excerpt = '';
                             if (articleMatch) {
-                                // HTML 태그 제거
-                                let cleanText = articleMatch[1].replace(/<[^>]*>/g, ' ');
-                                // HTML 엔티티 디코딩
-                                cleanText = cleanText.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+                                // HTML 태그 및 엔티티 완전 제거
+                                let cleanText = stripHtml(decodeHtmlEntities(articleMatch[1]));
                                 // 여러 공백을 하나로
                                 cleanText = cleanText.replace(/\s+/g, ' ').trim();
                                 // 150자 제한
