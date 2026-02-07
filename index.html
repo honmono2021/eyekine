@@ -672,115 +672,49 @@
             }
         ];
 
-        // 블로그 포스트 로드
+        // 블로그 포스트 로드 (JSON 기반)
         async function loadBlogPosts() {
             const postsGrid = document.getElementById('postsGrid');
             
             try {
-                // GitHub API로 blog 폴더 확인
-                const response = await fetch(
-                    `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/blog`,
-                    {
-                        headers: {
-                            'Authorization': `token ${GITHUB_CONFIG.token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    }
-                );
-
+                // posts.json 파일 읽기 (캐시 방지)
+                const response = await fetch('posts.json?' + Date.now());
+                
                 if (!response.ok) {
-                    throw new Error('Blog folder not found');
-                }
-
-                const folders = await response.json();
-                const blogFolders = folders.filter(item => item.type === 'dir');
-
-                if (blogFolders.length === 0) {
-                    // 블로그 글이 없으면 기본 포스트 표시
+                    // posts.json 없으면 기본 포스트 표시
                     renderPosts(DEFAULT_POSTS);
                     return;
                 }
 
-                // 각 폴더의 메타데이터 가져오기
-                const posts = await Promise.all(
-                    blogFolders.map(async folder => {
-                        try {
-                            // index.html 파일 가져오기
-                            const htmlResponse = await fetch(
-                                `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${folder.path}/index.html`,
-                                {
-                                    headers: {
-                                        'Authorization': `token ${GITHUB_CONFIG.token}`,
-                                        'Accept': 'application/vnd.github.v3+json'
-                                    }
-                                }
-                            );
+                const posts = await response.json();
+                
+                if (posts.length === 0) {
+                    renderPosts(DEFAULT_POSTS);
+                    return;
+                }
 
-                            if (!htmlResponse.ok) return null;
+                // 포스트 데이터 변환
+                const formattedPosts = posts.map(post => {
+                    const date = new Date(post.date);
+                    const formattedDate = date.toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    }).replace(/\. /g, '.').replace(/\.$/, '');
 
-                            const htmlData = await htmlResponse.json();
-                            const htmlContent = atob(htmlData.content);
-
-                            // HTML에서 제목 추출 (UTF-8 안전)
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(htmlContent, 'text/html');
-                            
-                            const h1Element = doc.querySelector('h1');
-                            let title = h1Element ? h1Element.textContent.trim() : folder.name;
-                            
-                            if (!title) title = folder.name;
-
-                            // 날짜 추출 (타임스탬프에서)
-                            const timestamp = folder.name.split('-').pop();
-                            const date = new Date(parseInt(timestamp));
-                            const formattedDate = date.toLocaleDateString('ko-KR', {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit'
-                            }).replace(/\. /g, '.').replace('.', '');
-
-                            // 내용 미리보기 추출 (UTF-8 안전)
-                            const articleElement = doc.querySelector('article.content');
-                            let excerpt = '';
-                            
-                            if (articleElement) {
-                                let cleanText = articleElement.textContent.trim();
-                                // 여러 공백을 하나로
-                                cleanText = cleanText.replace(/\s+/g, ' ');
-                                // 150자 제한
-                                excerpt = cleanText.substring(0, 150);
-                                if (cleanText.length > 150) excerpt += '...';
-                            }
-                            
-                            // excerpt가 비어있으면 기본 텍스트
-                            if (!excerpt) {
-                                excerpt = '내용을 확인하려면 클릭하세요.';
-                            }
-
-                            return {
-                                category: "블로그",
-                                date: formattedDate,
-                                title: title,
-                                excerpt: excerpt,
-                                url: `/${folder.path}/`
-                            };
-                        } catch (error) {
-                            console.error(`Error loading post ${folder.name}:`, error);
-                            return null;
-                        }
-                    })
-                );
-
-                // null 제거 및 날짜순 정렬
-                const validPosts = posts.filter(p => p !== null).sort((a, b) => {
-                    return new Date(b.date) - new Date(a.date);
+                    return {
+                        category: "블로그",
+                        date: formattedDate,
+                        title: post.title,
+                        excerpt: post.excerpt || '내용을 확인하려면 클릭하세요.',
+                        url: `/${post.path}/`
+                    };
                 });
 
-                // 포스트가 있으면 표시, 없으면 기본 포스트
-                renderPosts(validPosts.length > 0 ? validPosts : DEFAULT_POSTS);
+                renderPosts(formattedPosts);
 
             } catch (error) {
-                console.error('Error loading blog posts:', error);
+                console.error('Error loading posts:', error);
                 // 에러 발생시 기본 포스트 표시
                 renderPosts(DEFAULT_POSTS);
             }
