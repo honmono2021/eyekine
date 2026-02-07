@@ -735,11 +735,21 @@
                             const htmlData = await htmlResponse.json();
                             const htmlContent = atob(htmlData.content);
 
+                            console.log('=== POST DEBUG ===');
+                            console.log('Folder:', folder.name);
+                            console.log('HTML length:', htmlContent.length);
+
                             // HTML에서 제목 추출
                             const titleMatch = htmlContent.match(/<h1[^>]*>(.*?)<\/h1>/);
+                            console.log('Title match:', titleMatch ? titleMatch[1].substring(0, 100) : 'NO MATCH');
+                            
                             let title = titleMatch ? titleMatch[1] : folder.name;
+                            console.log('Title before decode:', title.substring(0, 100));
+                            
                             // HTML 태그 및 엔티티 완전 제거
                             title = stripHtml(decodeHtmlEntities(title)).trim();
+                            console.log('Title after decode:', title.substring(0, 100));
+                            
                             if (!title) title = folder.name;
 
                             // 날짜 추출 (타임스탬프에서)
@@ -753,10 +763,17 @@
 
                             // 내용 미리보기 추출 (article 내부의 텍스트)
                             const articleMatch = htmlContent.match(/<article[^>]*class="content"[^>]*>(.*?)<\/article>/s);
+                            console.log('Article match:', articleMatch ? 'FOUND' : 'NOT FOUND');
+                            
                             let excerpt = '';
                             if (articleMatch) {
+                                console.log('Article content length:', articleMatch[1].length);
+                                console.log('Article sample:', articleMatch[1].substring(0, 200));
+                                
                                 // HTML 태그 및 엔티티 완전 제거
                                 let cleanText = stripHtml(decodeHtmlEntities(articleMatch[1]));
+                                console.log('Clean text sample:', cleanText.substring(0, 200));
+                                
                                 // 여러 공백을 하나로
                                 cleanText = cleanText.replace(/\s+/g, ' ').trim();
                                 // 150자 제한
@@ -768,6 +785,10 @@
                             if (!excerpt) {
                                 excerpt = '내용을 확인하려면 클릭하세요.';
                             }
+                            
+                            console.log('Final title:', title);
+                            console.log('Final excerpt:', excerpt);
+                            console.log('===================');
 
                             return {
                                 category: "블로그",
