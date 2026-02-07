@@ -805,14 +805,14 @@
                         })
                     );
 
-                    postList.innerHTML = postsWithTitles.map(post => `
+                    postList.innerHTML = postsWithTitles.map((post, index) => `
                         <div class="post-item">
                             <a href="https://eyekine.com/${post.path}/" target="_blank">
                                 ${post.title}
                             </a>
                             <div class="post-actions">
-                                <button class="btn-small btn-edit" onclick="editPost('${post.path}')">✏️ 수정</button>
-                                <button class="btn-small btn-delete" onclick="deletePost('${post.path}')">🗑️ 삭제</button>
+                                <button class="btn-small btn-edit" data-path="${post.path}" onclick="editPost(this.dataset.path)">✏️ 수정</button>
+                                <button class="btn-small btn-delete" data-path="${post.path}" onclick="deletePost(this.dataset.path)">🗑️ 삭제</button>
                             </div>
                         </div>
                     `).join('');
@@ -877,9 +877,6 @@
 
         // 포스트 삭제
         function deletePost(path) {
-            console.log('=== DELETE DEBUG ===');
-            console.log('Delete path:', path);
-            console.log('Path type:', typeof path);
             currentDeletePath = path;
             document.getElementById('deleteModal').classList.add('active');
         }
@@ -887,9 +884,6 @@
         // 삭제 확인
         async function confirmDelete() {
             if (!currentDeletePath) return;
-
-            console.log('=== CONFIRM DELETE ===');
-            console.log('Current delete path:', currentDeletePath);
 
             closeDeleteModal();
             showMessage('info', '⏳ 삭제 중...');
@@ -913,12 +907,8 @@
 
         // 폴더 재귀 삭제
         async function deleteFolderRecursive(path) {
-            console.log('=== RECURSIVE DELETE ===');
-            console.log('Deleting path:', path);
-            
             try {
                 const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${path}`;
-                console.log('API URL:', url);
                 
                 const response = await fetch(url, {
                     headers: {
@@ -927,9 +917,6 @@
                     }
                 });
 
-                console.log('Response status:', response.status);
-                console.log('Response OK:', response.ok);
-
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Error response:', errorText);
@@ -937,15 +924,11 @@
                 }
 
                 const contents = await response.json();
-                console.log('Contents type:', Array.isArray(contents) ? 'array' : 'object');
-                console.log('Contents:', contents);
                 
                 // 배열인지 확인 (폴더)
                 if (Array.isArray(contents)) {
-                    console.log(`Found ${contents.length} items to delete`);
                     // 모든 하위 항목 삭제
                     for (const item of contents) {
-                        console.log(`Processing: ${item.type} - ${item.path}`);
                         if (item.type === 'file') {
                             await deleteFile(item.path, item.sha);
                         } else if (item.type === 'dir') {
@@ -954,7 +937,6 @@
                     }
                 } else {
                     // 파일인 경우
-                    console.log('Single file, deleting:', contents.path);
                     await deleteFile(contents.path, contents.sha);
                 }
             } catch (error) {
