@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EyeKine 블로그 관리자</title>
+    
+    <!-- Quill CSS -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    
     <style>
         * {
             margin: 0;
@@ -19,7 +23,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
         }
 
@@ -52,8 +56,7 @@
         }
 
         input[type="text"],
-        input[type="password"],
-        textarea {
+        input[type="password"] {
             width: 100%;
             padding: 12px 15px;
             border: 2px solid #e0e0e0;
@@ -64,76 +67,50 @@
         }
 
         input[type="text"]:focus,
-        input[type="password"]:focus,
-        textarea:focus {
+        input[type="password"]:focus {
             outline: none;
             border-color: #667eea;
         }
 
-        textarea {
-            min-height: 300px;
-            resize: vertical;
-            line-height: 1.6;
-        }
-
-        .image-upload-area {
-            border: 2px dashed #cbd5e0;
+        /* Quill Editor Styles */
+        #editor {
+            min-height: 400px;
+            background: white;
             border-radius: 8px;
-            padding: 40px 20px;
-            text-align: center;
-            background: #f7fafc;
-            margin-top: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
         }
 
-        .image-upload-area:hover {
-            border-color: #667eea;
-            background: #edf2f7;
+        .ql-container {
+            font-size: 16px;
+            font-family: 'Noto Sans KR', -apple-system, sans-serif;
         }
 
-        .image-upload-area.drag-over {
-            border-color: #667eea;
-            background: #e6f2ff;
+        .ql-editor {
+            min-height: 400px;
+            padding: 20px;
+            line-height: 1.8;
         }
 
-        input[type="file"] {
-            display: none;
-        }
-
-        .image-preview {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .image-preview-item {
-            position: relative;
+        .ql-editor img {
+            max-width: 100%;
+            height: auto;
             border-radius: 8px;
-            overflow: hidden;
-            aspect-ratio: 1;
+            margin: 20px 0;
         }
 
-        .image-preview-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        /* Custom toolbar */
+        .ql-toolbar {
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-bottom: none;
         }
 
-        .image-preview-item button {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(255,0,0,0.8);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            font-size: 18px;
-            line-height: 1;
+        .ql-container {
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            border: 2px solid #e0e0e0;
+            border-top: none;
         }
 
         .btn {
@@ -235,6 +212,19 @@
             font-weight: 600;
         }
 
+        .editor-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #1976d2;
+        }
+
+        .editor-info strong {
+            color: #0d47a1;
+        }
+
         @media (max-width: 768px) {
             .card {
                 padding: 20px;
@@ -244,8 +234,8 @@
                 font-size: 1.5em;
             }
 
-            .image-preview {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            .ql-editor {
+                min-height: 300px;
             }
         }
     </style>
@@ -267,22 +257,19 @@
         <div class="container">
             <div class="card">
                 <h1>✍️ 새 포스트 작성</h1>
-                <p class="subtitle">간단하게 블로그 글을 작성하고 발행하세요</p>
+                <p class="subtitle">워드처럼 자유롭게 편집하세요</p>
 
                 <label for="title">제목</label>
                 <input type="text" id="title" placeholder="포스트 제목을 입력하세요">
 
-                <label for="content">내용</label>
-                <textarea id="content" placeholder="포스트 내용을 입력하세요..."></textarea>
-
-                <label>이미지 업로드</label>
-                <div class="image-upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-                    <p>📸 클릭하거나 이미지를 드래그하세요</p>
-                    <p style="font-size: 0.9em; color: #7f8c8d; margin-top: 10px;">여러 이미지를 한번에 업로드할 수 있습니다</p>
+                <label>내용</label>
+                <div class="editor-info">
+                    <strong>💡 사용 방법:</strong> 툴바에서 이미지 버튼(🖼️)을 클릭하여 원하는 위치에 이미지를 삽입하세요. 
+                    텍스트 서식, 헤딩, 리스트 등도 자유롭게 사용할 수 있습니다.
                 </div>
-                <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFiles(this.files)">
-
-                <div class="image-preview" id="imagePreview"></div>
+                
+                <!-- Quill Editor -->
+                <div id="editor"></div>
 
                 <button class="btn" id="publishBtn" onclick="publishPost()">🚀 포스트 발행</button>
 
@@ -298,6 +285,9 @@
         </div>
     </div>
 
+    <!-- Quill JS -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
     <script>
         // GitHub 설정
         const CONFIG = {
@@ -307,7 +297,7 @@
             password: '9122'
         };
 
-        let uploadedImages = [];
+        let quill;
 
         // 로그인
         function login() {
@@ -317,6 +307,7 @@
             if (password === CONFIG.password) {
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('editorScreen').style.display = 'block';
+                initializeEditor();
                 loadPosts();
             } else {
                 message.className = 'status-message error';
@@ -332,71 +323,60 @@
             });
         });
 
-        // 드래그 앤 드롭
-        const uploadArea = document.getElementById('uploadArea');
+        // Quill 에디터 초기화
+        function initializeEditor() {
+            const toolbarOptions = [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'align': [] }],
+                ['link', 'image'],
+                ['clean']
+            ];
 
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('drag-over');
-        });
+            quill = new Quill('#editor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: {
+                        container: toolbarOptions,
+                        handlers: {
+                            image: imageHandler
+                        }
+                    }
+                },
+                placeholder: '여기에 내용을 작성하세요...\n\n이미지를 삽입하려면 위 툴바의 이미지 버튼을 클릭하세요.'
+            });
+        }
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('drag-over');
-        });
+        // 이미지 핸들러 (파일 선택)
+        function imageHandler() {
+            const input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*');
+            input.click();
 
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('drag-over');
-            handleFiles(e.dataTransfer.files);
-        });
-
-        // 이미지 처리
-        function handleFiles(files) {
-            Array.from(files).forEach(file => {
-                if (file.type.startsWith('image/')) {
+            input.onchange = async () => {
+                const file = input.files[0];
+                if (file) {
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        uploadedImages.push({
-                            name: file.name,
-                            data: e.target.result
-                        });
-                        updateImagePreview();
+                        const range = quill.getSelection();
+                        quill.insertEmbed(range.index, 'image', e.target.result);
                     };
                     reader.readAsDataURL(file);
                 }
-            });
-        }
-
-        // 이미지 미리보기 업데이트
-        function updateImagePreview() {
-            const preview = document.getElementById('imagePreview');
-            preview.innerHTML = '';
-
-            uploadedImages.forEach((img, index) => {
-                const div = document.createElement('div');
-                div.className = 'image-preview-item';
-                div.innerHTML = `
-                    <img src="${img.data}" alt="${img.name}">
-                    <button onclick="removeImage(${index})">×</button>
-                `;
-                preview.appendChild(div);
-            });
-        }
-
-        // 이미지 삭제
-        function removeImage(index) {
-            uploadedImages.splice(index, 1);
-            updateImagePreview();
+            };
         }
 
         // 포스트 발행
         async function publishPost() {
             const title = document.getElementById('title').value;
-            const content = document.getElementById('content').value;
+            const content = quill.root.innerHTML;
             const btn = document.getElementById('publishBtn');
             const message = document.getElementById('statusMessage');
 
-            if (!title || !content) {
+            if (!title || quill.getText().trim().length === 0) {
                 showMessage('error', '❌ 제목과 내용을 모두 입력해주세요');
                 return;
             }
@@ -416,34 +396,47 @@
                 const timestamp = Date.now();
                 const folderName = `blog/${slug}-${timestamp}`;
 
-                // 이미지 업로드
-                const imageUrls = [];
-                for (let i = 0; i < uploadedImages.length; i++) {
-                    const img = uploadedImages[i];
-                    const imgPath = `${folderName}/images/image-${i + 1}.jpg`;
+                // HTML에서 이미지 추출 및 업로드
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = content;
+                const images = tempDiv.querySelectorAll('img');
+                
+                let processedContent = content;
+                let imageIndex = 0;
+
+                for (const img of images) {
+                    const src = img.src;
                     
-                    // Base64에서 실제 데이터만 추출
-                    const base64Data = img.data.split(',')[1];
-                    
-                    await uploadToGitHub(imgPath, base64Data);
-                    imageUrls.push(`images/image-${i + 1}.jpg`);
+                    // Base64 이미지만 처리
+                    if (src.startsWith('data:image')) {
+                        imageIndex++;
+                        const base64Data = src.split(',')[1];
+                        const imgPath = `${folderName}/images/image-${imageIndex}.jpg`;
+                        
+                        // GitHub에 이미지 업로드
+                        await uploadToGitHub(imgPath, base64Data);
+                        
+                        // HTML에서 경로 변경
+                        processedContent = processedContent.replace(
+                            src,
+                            `images/image-${imageIndex}.jpg`
+                        );
+                    }
                 }
 
-                // HTML 생성
-                const html = generateHTML(title, content, imageUrls);
+                // HTML 파일 생성
+                const html = generateHTML(title, processedContent);
                 
                 // HTML 파일 업로드
                 const htmlPath = `${folderName}/index.html`;
                 await uploadToGitHub(htmlPath, btoa(unescape(encodeURIComponent(html))));
 
-                showMessage('success', `✅ 포스트가 성공적으로 발행되었습니다! URL: https://eyekine.com/${folderName}/`);
+                showMessage('success', `✅ 포스트가 성공적으로 발행되었습니다!\n\nURL: https://eyekine.com/${folderName}/`);
                 
                 // 폼 초기화
                 setTimeout(() => {
                     document.getElementById('title').value = '';
-                    document.getElementById('content').value = '';
-                    uploadedImages = [];
-                    updateImagePreview();
+                    quill.setContents([]);
                     loadPosts();
                 }, 2000);
 
@@ -480,14 +473,7 @@
         }
 
         // HTML 생성
-        function generateHTML(title, content, imageUrls) {
-            let contentWithImages = content;
-            
-            // 이미지 삽입
-            imageUrls.forEach((url, index) => {
-                contentWithImages += `\n\n<img src="${url}" alt="Image ${index + 1}">`;
-            });
-
+        function generateHTML(title, content) {
             return `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -529,7 +515,6 @@
         }
         .content p {
             margin-bottom: 1.5em;
-            white-space: pre-wrap;
         }
         .content img {
             width: 100%;
@@ -537,6 +522,25 @@
             margin: 30px 0;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .content h1, .content h2, .content h3 {
+            margin-top: 2em;
+            margin-bottom: 1em;
+            color: #2c3e50;
+        }
+        .content ul, .content ol {
+            margin-left: 30px;
+            margin-bottom: 1.5em;
+        }
+        .content li {
+            margin-bottom: 0.5em;
+        }
+        .content strong {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .content em {
+            font-style: italic;
         }
         .back-link {
             display: inline-block;
@@ -567,7 +571,7 @@
             </div>
         </header>
         <article class="content">
-            <p>${contentWithImages.replace(/\n/g, '</p><p>')}</p>
+            ${content}
         </article>
     </div>
 </body>
