@@ -723,7 +723,9 @@
 
                             // HTML에서 제목 추출
                             const titleMatch = htmlContent.match(/<h1[^>]*>(.*?)<\/h1>/);
-                            const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '') : folder.name;
+                            let title = titleMatch ? titleMatch[1] : folder.name;
+                            // HTML 태그 및 엔티티 제거
+                            title = title.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
 
                             // 날짜 추출 (타임스탬프에서)
                             const timestamp = folder.name.split('-').pop();
@@ -734,10 +736,25 @@
                                 day: '2-digit'
                             }).replace(/\. /g, '.').replace('.', '');
 
-                            // 내용 미리보기 추출
-                            const contentMatch = htmlContent.match(/<p[^>]*>(.*?)<\/p>/);
-                            let excerpt = contentMatch ? contentMatch[1].replace(/<[^>]*>/g, '') : '';
-                            excerpt = excerpt.substring(0, 150) + (excerpt.length > 150 ? '...' : '');
+                            // 내용 미리보기 추출 (article 내부의 텍스트)
+                            const articleMatch = htmlContent.match(/<article[^>]*class="content"[^>]*>(.*?)<\/article>/s);
+                            let excerpt = '';
+                            if (articleMatch) {
+                                // HTML 태그 제거
+                                let cleanText = articleMatch[1].replace(/<[^>]*>/g, ' ');
+                                // HTML 엔티티 디코딩
+                                cleanText = cleanText.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+                                // 여러 공백을 하나로
+                                cleanText = cleanText.replace(/\s+/g, ' ').trim();
+                                // 150자 제한
+                                excerpt = cleanText.substring(0, 150);
+                                if (cleanText.length > 150) excerpt += '...';
+                            }
+                            
+                            // excerpt가 비어있으면 기본 텍스트
+                            if (!excerpt) {
+                                excerpt = '내용을 확인하려면 클릭하세요.';
+                            }
 
                             return {
                                 category: "블로그",
@@ -808,10 +825,6 @@
 
         // 페이지 로드시 블로그 포스트 로드
         document.addEventListener('DOMContentLoaded', loadBlogPosts);
-    </script>
-</body>
-</html>
-
     </script>
 </body>
 </html>
