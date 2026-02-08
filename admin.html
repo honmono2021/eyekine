@@ -411,7 +411,9 @@
                 document.getElementById('editorScreen').style.display = 'block';
                 initializeEditor();
                 loadPosts();
-            } else {
+            } 
+        window.login = login;
+else {
                 message.className = 'status-message error';
                 message.style.display = 'block';
                 message.textContent = '❌ 비밀번호가 올바르지 않습니다';
