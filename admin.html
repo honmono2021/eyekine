@@ -412,13 +412,15 @@
                 initializeEditor();
                 loadPosts();
             } 
-        window.login = login;
 else {
                 message.className = 'status-message error';
                 message.style.display = 'block';
                 message.textContent = '❌ 비밀번호가 올바르지 않습니다';
             }
         }
+        // expose login for inline onclick
+        window.login = login;
+
 
         // Enter 키로 로그인
         document.addEventListener('DOMContentLoaded', function() {
