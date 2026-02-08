@@ -396,8 +396,6 @@
             return btoa(bin);
         }
 
-
-
         let quill;
         let currentDeleteIndex = null;
 
@@ -593,7 +591,7 @@ else {
                 if (response.ok) {
                     const data = await response.json();
                     sha = data.sha;
-                    const content = atob(data.content);
+                    const content = b64ToUtf8(data.content);
                     posts = JSON.parse(content);
                 }
 
@@ -611,7 +609,7 @@ else {
                         },
                         body: JSON.stringify({
                             message: 'Update posts.json',
-                            content: btoa(unescape(encodeURIComponent(JSON.stringify(posts, null, 2)))),
+                            content: utf8ToB64(JSON.stringify(posts, null, 2)),
                             sha: sha,
                             branch: 'main'
                         })
@@ -754,76 +752,18 @@ else {
 
         // 삭제 확인
         async function confirmDelete() {
-            const modal = document.getElementById('deleteModal');
-            const postId = modal.dataset.postId;
+            if (currentDeleteIndex === null) return;
+
+            closeDeleteModal();
+            showMessage('info', '⏳ 삭제 중...');
 
             try {
-                // 1) Load posts.json from main (root)
-                const postsUrl = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/posts.json`;
-                const headers = { Authorization: `token ${CONFIG.token}` };
-
-                const res = await fetch(postsUrl, { headers });
-                if (!res.ok) {
-                    throw new Error('posts.json을 찾을 수 없습니다');
-                }
-                const data = await res.json();
-                const sha = data.sha;
-
-                const posts = JSON.parse(b64ToUtf8(data.content));
-                const postToDelete = posts.find(p => p.id === postId);
-                if (!postToDelete) {
-                    throw new Error('삭제할 글을 찾을 수 없습니다');
-                }
-
-                // 2) Delete the post folder (path) - best effort
-                const folderPath = postToDelete.path;
-                const folderUrl = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${encodeURIComponent(folderPath)}`;
-                const folderRes = await fetch(folderUrl, { headers });
-                if (folderRes.ok) {
-                    const files = await folderRes.json();
-                    if (Array.isArray(files)) {
-                        for (const file of files) {
-                            if (!file || !file.url || !file.sha) continue;
-                            await fetch(file.url, {
-                                method: 'DELETE',
-                                headers: { ...headers, 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    message: `Delete post file: ${file.path}`,
-                                    sha: file.sha,
-                                    branch: 'main'
-                                })
-                            });
-                        }
+                // posts.json 가져오기
+                const response = await fetch(
+                    `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/posts.json`,
+                    {
+                        headers: { 'Authorization': `token ${CONFIG.token}` }
                     }
-                }
-
-                // 3) Remove from posts.json and commit back to main
-                const updatedPosts = posts.filter(p => p.id !== postId);
-
-                const updateRes = await fetch(postsUrl, {
-                    method: 'PUT',
-                    headers: { ...headers, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: `Delete post: ${postToDelete.title}`,
-                        content: utf8ToB64(JSON.stringify(updatedPosts, null, 2)),
-                        sha: sha,
-                        branch: 'main'
-                    })
-                });
-
-                if (!updateRes.ok) {
-                    const errText = await updateRes.text();
-                    throw new Error('posts.json 업데이트 실패: ' + errText);
-                }
-
-                closeDeleteModal();
-                showMessage('✅ 삭제 완료!', 'success');
-                await loadPosts();
-
-            } catch (error) {
-                showMessage(`❌ 삭제 실패: ${error.message}`, 'error');
-            }
-        }
                 );
 
                 if (!response.ok) {
@@ -831,7 +771,7 @@ else {
                 }
 
                 const data = await response.json();
-                const posts = JSON.parse(atob(data.content));
+                const posts = JSON.parse(b64ToUtf8(data.content));
                 const deletedPost = posts[currentDeleteIndex];
 
                 // 포스트 폴더 삭제
@@ -851,7 +791,7 @@ else {
                         },
                         body: JSON.stringify({
                             message: 'Delete post from posts.json',
-                            content: btoa(unescape(encodeURIComponent(JSON.stringify(posts, null, 2)))),
+                            content: utf8ToB64(JSON.stringify(posts, null, 2)),
                             sha: data.sha,
                             branch: 'main'
                         })
