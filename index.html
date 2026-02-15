@@ -439,6 +439,108 @@
             margin: 2.2rem 0;
         }
 
+        
+        /* Swiper for intro section (mobile) */
+        .intro-swiper {
+            display: none;
+        }
+        @media (max-width: 968px) {
+            .intro-section {
+                display: none;
+            }
+            .intro-swiper {
+                display: block;
+                max-width: 100%;
+                margin: 2rem auto;
+                position: relative;
+                overflow: hidden;
+            }
+            .intro-swiper-track {
+                display: flex;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+            .intro-swiper-track::-webkit-scrollbar {
+                display: none;
+            }
+            .intro-slide {
+                flex: 0 0 100%;
+                width: 100%;
+                min-height: 70vh;
+                scroll-snap-align: start;
+                padding: 2rem 2rem;
+                box-sizing: border-box;
+                background-color: var(--color-card);
+                border: 1px solid var(--color-border);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            .intro-slide h2 {
+                font-family: var(--font-serif);
+                font-size: 1.6rem;
+                font-weight: 400;
+                margin-bottom: 1.5rem;
+                color: var(--color-text);
+            }
+            .intro-slide p {
+                font-size: 0.95rem;
+                color: var(--color-text-light);
+                line-height: 1.9;
+                margin-bottom: 1.2rem;
+            }
+            .intro-slide strong {
+                font-weight: 500;
+                color: var(--color-text);
+            }
+            .intro-slide .accent-text {
+                color: var(--color-accent);
+                font-weight: 500;
+            }
+            .intro-slide .callout {
+                background-color: rgba(139, 115, 85, 0.05);
+                border-left: 2px solid var(--color-accent-light);
+                padding: 1.2rem 1.5rem;
+                margin: 1rem 0;
+                border-radius: 0 3px 3px 0;
+            }
+            .intro-slide .callout p {
+                margin-bottom: 0;
+                font-size: 0.93rem;
+            }
+            .swiper-dots {
+                display: flex;
+                justify-content: center;
+                gap: 8px;
+                padding: 1rem 0;
+            }
+            .swiper-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: var(--color-border);
+                border: none;
+                padding: 0;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            .swiper-dot.active {
+                background: var(--color-accent);
+                width: 24px;
+                border-radius: 4px;
+            }
+            .swipe-hint {
+                text-align: center;
+                font-size: 0.75rem;
+                color: var(--color-text-light);
+                opacity: 0.6;
+                margin-top: 0.3rem;
+            }
+        }
+        
         /* About Section */
         .about-section {
             max-width: 900px;
@@ -768,6 +870,28 @@
 
         // 페이지 로드시 블로그 포스트 로드
         document.addEventListener('DOMContentLoaded', loadBlogPosts);
+    </script>
+
+    <script>
+    // Intro swiper dot navigation
+    function goToSlide(index) {
+        const track = document.getElementById('introSwiper');
+        if (track) {
+            const slideWidth = track.offsetWidth;
+            track.scrollTo({ left: slideWidth * index, behavior: 'smooth' });
+        }
+    }
+    // Update dots on scroll
+    const swiperTrack = document.getElementById('introSwiper');
+    if (swiperTrack) {
+        swiperTrack.addEventListener('scroll', function() {
+            const slideWidth = this.offsetWidth;
+            const currentIndex = Math.round(this.scrollLeft / slideWidth);
+            document.querySelectorAll('.swiper-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentIndex);
+            });
+        });
+    }
     </script>
 </body>
 </html>
