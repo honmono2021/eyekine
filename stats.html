@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EyeKine 통계 대시보드</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', sans-serif; background: #f5f5f5; color: #333; }
+        
+        .login-screen {
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+        .login-card {
+            background: white; border-radius: 16px; padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 360px; text-align: center;
+        }
+        .login-card h2 { margin-bottom: 0.5rem; font-size: 1.5rem; }
+        .login-card p { color: #888; margin-bottom: 2rem; font-size: 0.9rem; }
+        .login-card input {
+            width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0;
+            border-radius: 8px; font-size: 1rem; margin-bottom: 1rem; text-align: center;
+            letter-spacing: 8px; font-family: monospace;
+        }
+        .login-card input:focus { outline: none; border-color: #667eea; }
+        .login-card button {
+            width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;
+        }
+        .login-card button:hover { opacity: 0.9; }
+
+        .dashboard { display: none; }
+        .dashboard-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white; padding: 2rem 3rem;
+        }
+        .dashboard-header h1 { font-size: 1.5rem; font-weight: 500; }
+        .dashboard-header p { color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-top: 0.3rem; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; }
+        .period-tabs { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .period-tab {
+            padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.7); background: transparent; cursor: pointer; font-size: 0.85rem;
+        }
+        .period-tab.active { background: rgba(255,255,255,0.2); color: white; border-color: white; }
+        .back-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.85rem; }
+        .back-link:hover { color: white; }
+
+        .content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white; border-radius: 12px; padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .stat-card .label { font-size: 0.8rem; color: #888; margin-bottom: 0.5rem; }
+        .stat-card .value { font-size: 2rem; font-weight: 700; color: #1a1a2e; }
+        .stat-card .change { font-size: 0.8rem; margin-top: 0.3rem; }
+        .stat-card .change.up { color: #10b981; }
+        .stat-card .change.down { color: #ef4444; }
+
+        .chart-section {
+            background: white; border-radius: 12px; padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 2rem;
+        }
+        .chart-section h3 { font-size: 1rem; font-weight: 500; margin-bottom: 1rem; color: #333; }
+        .chart-container { position: relative; height: 300px; }
+
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        
+        .rank-list { list-style: none; }
+        .rank-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.8rem 0; border-bottom: 1px solid #f0f0f0;
+        }
+        .rank-item:last-child { border-bottom: none; }
+        .rank-num { 
+            width: 24px; height: 24px; border-radius: 50%; background: #f0f0f0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700; color: #666; margin-right: 0.8rem;
+        }
+        .rank-item:nth-child(1) .rank-num { background: #ffd700; color: white; }
+        .rank-item:nth-child(2) .rank-num { background: #c0c0c0; color: white; }
+        .rank-item:nth-child(3) .rank-num { background: #cd7f32; color: white; }
+        .rank-title { flex: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rank-views { font-size: 0.85rem; font-weight: 500; color: #667eea; margin-left: 1rem; }
+
+        .source-bar { margin-bottom: 0.8rem; }
+        .source-bar .source-label {
+            display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem;
+        }
+        .source-bar .bar-bg {
+            height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden;
+        }
+        .source-bar .bar-fill {
+            height: 100%; border-radius: 4px; transition: width 0.5s ease;
+        }
+
+        .loading { text-align: center; padding: 3rem; color: #888; }
+        .loading .spinner {
+            width: 40px; height: 40px; border: 3px solid #f0f0f0;
+            border-top: 3px solid #667eea; border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 1rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .notice {
+            background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;
+            padding: 1rem 1.5rem; margin-bottom: 2rem; font-size: 0.85rem; color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .two-col { grid-template-columns: 1fr; }
+            .content { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+    <div class="login-card">
+        <h2>EyeKine Stats</h2>
+        <p>통계 대시보드</p>
+        <input type="password" id="statsPassword" placeholder="비밀번호" maxlength="4">
+        <button onclick="checkLogin()">로그인</button>
+    </div>
+</div>
+
+<div class="dashboard" id="dashboard">
+    <div class="dashboard-header">
+        <div class="header-row">
+            <div>
+                <h1>EyeKine 통계 대시보드</h1>
+                <p>Google Analytics 4 기반 실시간 데이터</p>
+            </div>
+            <a href="https://eyekine.com" class="back-link">← 사이트로 돌아가기</a>
+        </div>
+        <div class="period-tabs">
+            <button class="period-tab active" onclick="changePeriod('today')">오늘</button>
+            <button class="period-tab" onclick="changePeriod('7days')">7일</button>
+            <button class="period-tab" onclick="changePeriod('30days')">30일</button>
+            <button class="period-tab" onclick="changePeriod('90days')">90일</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="notice" id="notice">
+            Google Analytics 데이터 수집이 시작되었습니다. 실제 데이터가 표시되기까지 24~48시간이 소요될 수 있습니다.
+            자세한 분석은 <a href="https://analytics.google.com" target="_blank" style="color:#667eea;">Google Analytics 대시보드</a>에서 확인하세요.
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="label">방문자 수</div>
+                <div class="value" id="visitors">-</div>
+                <div class="change" id="visitorsChange"></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">페이지뷰</div>
+                <div class="value" id="pageviews">-</div>
+                <div class="change" id="pageviewsChange"></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">평균 체류시간</div>
+                <div class="value" id="avgTime">-</div>
+                <div class="change" id="avgTimeChange"></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">이탈률</div>
+                <div class="value" id="bounceRate">-</div>
+                <div class="change" id="bounceRateChange"></div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <h3>방문자 추이</h3>
+            <div class="chart-container">
+                <canvas id="visitorChart"></canvas>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div class="chart-section">
+                <h3>인기 글 순위</h3>
+                <ul class="rank-list" id="popularPosts">
+                    <li class="loading"><div class="spinner"></div>데이터 로딩 중...</li>
+                </ul>
+            </div>
+            <div class="chart-section">
+                <h3>방문 경로</h3>
+                <div id="trafficSources">
+                    <div class="loading"><div class="spinner"></div>데이터 로딩 중...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const GA_PROPERTY_ID = '468498498';
+const MEASUREMENT_ID = 'G-SBTE9F36RH';
+let visitorChart = null;
+let currentPeriod = 'today';
+
+function checkLogin() {
+    const pw = document.getElementById('statsPassword').value;
+    if (pw === '9122') {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadDashboard();
+    } else {
+        alert('비밀번호가 틀렸습니다.');
+    }
+}
+
+document.getElementById('statsPassword').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') checkLogin();
+});
+
+function changePeriod(period) {
+    currentPeriod = period;
+    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    loadDashboard();
+}
+
+async function loadDashboard() {
+    // Load posts data for popular posts
+    try {
+        const resp = await fetch('https://api.github.com/repos/honmono2021/eyekine/contents/posts.json');
+        const data = await resp.json();
+        const cleaned = data.content.replace(/\s/g, '');
+        const binaryStr = atob(cleaned);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+        const posts = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+        renderPopularPosts(posts);
+    } catch(e) {
+        console.error('Failed to load posts:', e);
+    }
+
+    renderTrafficSources();
+    renderChart();
+    renderStats();
+}
+
+function renderStats() {
+    // GA4 data needs time to populate - show placeholder with explanation
+    const periods = {
+        'today': { visitors: '-', pageviews: '-', avgTime: '-', bounce: '-' },
+        '7days': { visitors: '-', pageviews: '-', avgTime: '-', bounce: '-' },
+        '30days': { visitors: '-', pageviews: '-', avgTime: '-', bounce: '-' },
+        '90days': { visitors: '-', pageviews: '-', avgTime: '-', bounce: '-' }
+    };
+    const d = periods[currentPeriod];
+    document.getElementById('visitors').textContent = d.visitors;
+    document.getElementById('pageviews').textContent = d.pageviews;
+    document.getElementById('avgTime').textContent = d.avgTime;
+    document.getElementById('bounceRate').textContent = d.bounce;
+}
+
+function renderPopularPosts(posts) {
+    const container = document.getElementById('popularPosts');
+    container.innerHTML = posts.map((post, i) => {
+        const date = new Date(post.date).toLocaleDateString('ko-KR');
+        return '<li class="rank-item">' +
+            '<span class="rank-num">' + (i + 1) + '</span>' +
+            '<span class="rank-title"><a href="/' + post.path + '/" style="color:inherit;text-decoration:none;">' + post.title + '</a></span>' +
+            '<span class="rank-views">' + date + '</span>' +
+        '</li>';
+    }).join('');
+}
+
+function renderTrafficSources() {
+    const sources = [
+        { name: 'Google 검색', pct: 0, color: '#4285f4' },
+        { name: '직접 방문', pct: 0, color: '#34a853' },
+        { name: 'SNS (카카오/네이버)', pct: 0, color: '#fbbc05' },
+        { name: '기타', pct: 0, color: '#ea4335' }
+    ];
+    const container = document.getElementById('trafficSources');
+    container.innerHTML = '<p style="color:#888;font-size:0.85rem;margin-bottom:1rem;">GA4 데이터 수집 시작 후 24~48시간 뒤부터 표시됩니다.</p>' +
+        sources.map(s =>
+        '<div class="source-bar">' +
+            '<div class="source-label"><span>' + s.name + '</span><span>' + s.pct + '%</span></div>' +
+            '<div class="bar-bg"><div class="bar-fill" style="width:' + s.pct + '%;background:' + s.color + ';"></div></div>' +
+        '</div>'
+    ).join('');
+}
+
+function renderChart() {
+    const ctx = document.getElementById('visitorChart').getContext('2d');
+    if (visitorChart) visitorChart.destroy();
+
+    let labels, data;
+    const now = new Date();
+    
+    if (currentPeriod === 'today') {
+        labels = Array.from({length: 24}, (_, i) => i + '시');
+        data = new Array(24).fill(0);
+    } else if (currentPeriod === '7days') {
+        labels = Array.from({length: 7}, (_, i) => {
+            const d = new Date(now); d.setDate(d.getDate() - (6-i));
+            return (d.getMonth()+1) + '/' + d.getDate();
+        });
+        data = new Array(7).fill(0);
+    } else if (currentPeriod === '30days') {
+        labels = Array.from({length: 30}, (_, i) => {
+            const d = new Date(now); d.setDate(d.getDate() - (29-i));
+            return (d.getMonth()+1) + '/' + d.getDate();
+        });
+        data = new Array(30).fill(0);
+    } else {
+        labels = Array.from({length: 12}, (_, i) => {
+            const d = new Date(now); d.setDate(d.getDate() - (90 - i*7.5));
+            return (d.getMonth()+1) + '/' + d.getDate();
+        });
+        data = new Array(12).fill(0);
+    }
+
+    visitorChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '방문자',
+                data: data,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 2,
+                pointHoverRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1a1a2e',
+                    titleFont: { family: 'Noto Sans KR' },
+                    bodyFont: { family: 'Noto Sans KR' }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
