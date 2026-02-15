@@ -847,6 +847,7 @@
         // 삭제 확인
         async function confirmDelete() {
             if (currentDeleteIndex === null) return;
+            const deleteIndex = currentDeleteIndex;
             closeDeleteModal();
             showMessage('info', '⏳ 삭제 중...');
             try {
@@ -862,11 +863,11 @@
                 }
                 const data = await response.json();
                 const posts = JSON.parse(decodeGitHubBase64(data.content));
-                const deletedPost = posts[currentDeleteIndex];
+                const deletedPost = posts[deleteIndex];
                 // 포스트 폴더 삭제
                 await deleteFolderRecursive(deletedPost.path);
                 // posts.json에서 제거
-                posts.splice(currentDeleteIndex, 1);
+                posts.splice(deleteIndex, 1);
                 // posts.json 업데이트
                 await fetch(
                     `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/posts.json`,
