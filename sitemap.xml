@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://eyekine.com/</loc>
-    <lastmod>2026-02-19</lastmod>
+        <lastmod>2026-02-20</lastmod>
         <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -29,6 +29,11 @@
         <loc>https://eyekine.com/blog/%EB%88%88%EC%9E%AC%EC%88%98%EC%88%A0%EC%97%90%EC%84%9C-%EB%A6%AC%EB%B2%A0%EC%9D%B4%ED%84%B0-%EC%9D%98-%EC%9D%98%EB%AF%B8-1770470356973/</loc>
         <lastmod>2026-02-07</lastmod>
         <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://eyekine.com/blog/눈재수술로-얇은-인아웃라인-되기-1771586219476/</loc>
+        <lastmod>2026-02-20</lastmod>
         <priority>0.8</priority>
     </url>
 </urlset>
